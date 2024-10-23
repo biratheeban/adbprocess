@@ -1,23 +1,22 @@
-import os
 import requests
 
-######################
-# Jenkins
-jenkins_url = 'http://jenkins_url_here'
-username = 'your_username'  
-password = 'your_password'  
-######################
+# Jenkins 
+jenkins_url = 'https://your-jenkins-url.com'
+username = 'your_username'
+api_token = 'your_api_token'
 
+api_url = f'{jenkins_url}/api/json'
 
-session = requests.Session()
-
-# Login URL
-login_url = f'{jenkins_url}/j_acegi_security_check'
-
-# Send authentication request with username and password
+# Send 
 try:
-    auth_response = session.post(login_url, auth=(username, password))
-    print(f'Status Code: {auth_response.status_code}')
-    print(f'Response Content: {auth_response.text}')
+    response = requests.get(api_url, auth=(username, api_token))
+    
+    if response.status_code == 200:
+        print('Login successful!')
+        print(response.json())
+    else:
+        print(f'Failed to log in. Status Code: {response.status_code}')
+        print(response.text)
+
 except requests.exceptions.RequestException as e:
     print(f'Error during request: {e}')
