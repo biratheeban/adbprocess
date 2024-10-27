@@ -2,8 +2,8 @@ import requests
 
 # Jenkins 
 jenkins_url = 'https://your-jenkins-url.com'
-username = 'your_username'
-api_token = 'your_api_token'
+username = 'username'
+api_token = 'api_token'
 
 api_url = f'{jenkins_url}/api/json'
 
