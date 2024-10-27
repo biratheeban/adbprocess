@@ -1,23 +1,24 @@
-
 import requests
+from bs4 import BeautifulSoup
+import os
 
-######################
-# Jenkins
-jenkins_url = 'ip or url of jenkins'
-username = 'username'
-api_token = 'api-token'
-######################
 
-# Startsession
-session = requests.Session()
+jenkins_url = "https://jenkinsurl"
+auth = ("user", "authtoken")
 
-#URL
-login_url = f'{jenkins_url}/j_acegi_security_check'
 
-# Send authentication request
-try:
-    auth_response = session.post(login_url, auth=(username, api_token))
-    print(f'Status Code: {auth_response.status_code}')
-    print(f'Response Content: {auth_response.text}')
-except requests.exceptions.RequestException as e:
-    print(f'Error during request: {e}')
+def fetch_build_history():
+    response = requests.get(jenkins_url, auth=auth, verify=False)
+    soup = BeautifulSoup(response.content, "html.parser")
+
+    print(response.content)
+    build_links = []
+    build_history_div = soup.find("div", id="buildHistoryPage")
+    if build_history_div:
+        for a_tag in build_history_div.find_all("a", class_="build-row", href=True):
+            job_number = a_tag.text.strip()
+            href = a_tag["href"]
+            full_url = f"{jenkins_url}{href}"
+            build_links.append((job_number, full_url))
+
+    return build_links
