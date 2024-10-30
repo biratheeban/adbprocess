@@ -22,3 +22,22 @@ def fetch_build_history():
             build_links.append((job_number, full_url))
 
     return build_links
+
+def save_build_link_to_db(job_number, url):
+    is_exist=false
+    connection = mysql.connector.connect(db_config)
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT COUNT(*) FROM build_history WHERE job_number = %s", (job_number,))
+    (count,) = cursor.fetchone()  
+
+    if count == 0:
+        cursor.execute("INSERT INTO build_history (job_number, url) VALUES (%s, %s)", (job_number, url))
+        connection.commit()
+        is_exist=false
+    else:
+        is_exist=true
+
+    cursor.close()
+    connection.close()
+    return is_exist
