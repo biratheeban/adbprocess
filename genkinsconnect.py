@@ -6,24 +6,35 @@ import os
 jenkins_url = "https://jenkinsurl"
 auth = ("user", "authtoken")
 
+import mysql.connector
+from mysql.connector import Error
+
 def save_build_link_to_db(job_number, url):
-    is_exist=false
-    connection = mysql.connector.connect(db_config)
-    cursor = connection.cursor()
+    is_exist = False
+    try:
+        connection = mysql.connector.connect()
+        cursor = connection.cursor()
+        cursor.execute("SELECT COUNT(*) FROM build_history WHERE job_number = %s", (job_number,))
+        (count,) = cursor.fetchone()
 
-    cursor.execute("SELECT COUNT(*) FROM build_history WHERE job_number = %s", (job_number,))
-    (count,) = cursor.fetchone()  
+        if count == 0:
+            cursor.execute("INSERT INTO build_history (job_number, url) VALUES (%s, %s)", (job_number, url))
+            connection.commit()
+            is_exist = False
+        else:
+            is_exist = True
 
-    if count == 0:
-        cursor.execute("INSERT INTO build_history (job_number, url) VALUES (%s, %s)", (job_number, url))
-        connection.commit()
-        is_exist=false
-    else:
-        is_exist=true
+    except Error as e:
+        print("Error while connecting to the database:", e)
 
-    cursor.close()
-    connection.close()
+    finally:
+        if cursor:
+            cursor.close()
+        if connection:
+            connection.close()
+
     return is_exist
+
 
 def fetch_build_history():
     response = requests.get(jenkins_url, auth=auth, verify=False)
