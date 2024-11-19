@@ -29,16 +29,18 @@ def get_android_app_info(package_name):
         )
         if meminfo_result.returncode != 0 or not meminfo_result.stdout.strip():
             print("No memory info available for package:", package_name)
-            return {"pid": pid, "name": app_name, "memory_data": "N/A"}
+            return {"pid": pid, "name": app_name, "memory_data": {}}
 
         memory_data = {}
         for line in meminfo_result.stdout.splitlines():
-            if "TOTAL" in line or "Native Heap" in line or "Dalvik Heap" in line:
+            if "TOTAL:" in line or "Native Heap:" in line or "Dalvik Heap:" in line:
                 parts = line.split()
-                if len(parts) >= 2 and parts[0].isnumeric():
-                    key = " ".join(parts[1:]).strip()
-                    value = int(parts[0])  # Convert memory value to KB
+                try:
+                    key = parts[0].replace(":", "").strip()
+                    value = int(parts[-1].replace("kB", "").strip())  # Convert memory value to integer KB
                     memory_data[key] = value
+                except (ValueError, IndexError):
+                    continue  
 
         return {"pid": pid, "name": app_name, "memory_data": memory_data}
 
@@ -46,22 +48,26 @@ def get_android_app_info(package_name):
         print("Error fetching app info:", e)
         return None
 
-def free_listen(package_name, output_file, interval=10):
+
+def free_listen(package_name, output_file, interval=5):
     data_list = []
     try:
         while True:
             app_info = get_android_app_info(package_name)
             if app_info:
                 current_time = datetime.now()
-                app_info["timestamp"] = current_time.strftime("%H:%M:%S")  
-                app_info["date"] = current_time.strftime("%Y-%m-%d") 
+                app_info["timestamp"] = current_time.strftime("%H:%M:%S")
+                app_info["date"] = current_time.strftime("%Y-%m-%d")
 
                 data_list.append(app_info)
 
                 with open(output_file, "w") as f:
                     json.dump(data_list, f, indent=4)
 
-                print(f"App info updated. PID: {app_info['pid']}, Date: {app_info['date']}, Time: {app_info['timestamp']}, Memory types: {list(app_info['memory_data'].keys())}")
+                print(
+                    f"App info updated. PID: {app_info['pid']}, Date: {app_info['date']}, "
+                    f"Time: {app_info['timestamp']}, Memory types: {list(app_info['memory_data'].keys())}"
+                )
             else:
                 print("Failed to fetch app info.")
 
@@ -74,4 +80,4 @@ def free_listen(package_name, output_file, interval=10):
 if __name__ == "__main__":
     package_name = "lk.bi007.safemyphone"
     output_file = "memory_info.json"
-    free_listen(package_name, output_file, interval=10)
+    free_listen(package_name, output_file, interval=5)
