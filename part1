@@ -1,0 +1,49 @@
+import subprocess
+
+def get_android_app_memory_info(package_name):
+    try:
+        meminfo_result = subprocess.run(
+            ["adb", "shell", f"dumpsys meminfo {package_name}"],
+            capture_output=True,
+            text=True
+        )
+        if meminfo_result.returncode != 0 or not meminfo_result.stdout.strip():
+            print(f"No memory info available for package: {package_name}")
+            return None
+
+        memory_data = {}
+        in_sections = False
+        for line in meminfo_result.stdout.splitlines():
+            line = line.strip()
+            
+            if line.startswith("App Summary"):
+                in_sections = True
+                continue
+            if in_sections and line.startswith("TOTAL"):
+                break  
+            
+            # Parse relevant memory info
+            if in_sections:
+                parts = line.split()
+                if len(parts) >= 2:
+                    key = parts[0].replace(":", "").strip()
+                    try:
+                        value = int(parts[-2].replace("kB", "").strip())  # Memory value in KB
+                        memory_data[key] = value
+                    except ValueError:
+                        continue  # Skip invalid lines
+
+        total_line = next((line for line in meminfo_result.stdout.splitlines() if line.startswith("TOTAL:")), None)
+        if total_line:
+            parts = total_line.split()
+            try:
+                total_memory = int(parts[-2].replace("kB", "").strip())
+                memory_data["TOTAL"] = total_memory
+            except ValueError:
+                pass
+
+        return memory_data
+
+    except Exception as e:
+        print("Error fetching memory info:", e)
+        return None
