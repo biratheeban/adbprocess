@@ -1,49 +1,69 @@
-import subprocess
 
-def get_android_app_memory_info(package_name):
+def get_android_app_info(package_name):
     try:
+        process_result = subprocess.run(
+            ["adb", "shell", f"ps -A | grep {package_name}"],
+            capture_output=True,
+            text=True,
+            shell=True
+        )
+
+        if process_result.returncode != 0 or not process_result.stdout.strip():
+            print(f"No process found for package: {package_name}")
+            return None
+
+
+        process_line = process_result.stdout.strip().splitlines()[0]
+        process_info = process_line.split()
+        pid = process_info[1]  
+        app_name = process_info[-1]  
+
         meminfo_result = subprocess.run(
             ["adb", "shell", f"dumpsys meminfo {package_name}"],
             capture_output=True,
             text=True
         )
+
         if meminfo_result.returncode != 0 or not meminfo_result.stdout.strip():
             print(f"No memory info available for package: {package_name}")
-            return None
+            return {"pid": pid, "name": app_name, "memory_data": {}}
 
         memory_data = {}
-        in_sections = False
+        in_app_summary = False
         for line in meminfo_result.stdout.splitlines():
             line = line.strip()
-            
+
             if line.startswith("App Summary"):
-                in_sections = True
+                in_app_summary = True
                 continue
-            if in_sections and line.startswith("TOTAL"):
-                break  
-            
-            # Parse relevant memory info
-            if in_sections:
+
+            if in_app_summary:
+                if line.startswith("TOTAL"):
+                    break
                 parts = line.split()
                 if len(parts) >= 2:
                     key = parts[0].replace(":", "").strip()
                     try:
-                        value = int(parts[-2].replace("kB", "").strip())  # Memory value in KB
+                        value = int(parts[-2].replace("kB", "").strip())  # Memory value in kB
                         memory_data[key] = value
                     except ValueError:
-                        continue  # Skip invalid lines
+                        continue
 
-        total_line = next((line for line in meminfo_result.stdout.splitlines() if line.startswith("TOTAL:")), None)
-        if total_line:
-            parts = total_line.split()
-            try:
-                total_memory = int(parts[-2].replace("kB", "").strip())
-                memory_data["TOTAL"] = total_memory
-            except ValueError:
-                pass
+            if any(key in line for key in ["Native Heap", "Dalvik Heap", "Graphics", "Stack", "TOTAL"]):
+                parts = line.split()
+                try:
+                    key = parts[0].replace(":", "").strip()
+                    value = int(parts[-2].replace("kB", "").strip())  # Memory value in kB
+                    memory_data[key] = value
+                except (ValueError, IndexError):
+                    continue
 
-        return memory_data
+        return {
+            "pid": pid,
+            "name": app_name,
+            "memory_data": memory_data
+        }
 
     except Exception as e:
-        print("Error fetching memory info:", e)
+        print(f"Error fetching app info for {package_name}: {e}")
         return None
