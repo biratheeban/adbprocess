@@ -94,4 +94,6 @@ function saveLogDataToDb($timestamp,$memory_data){
             ]);
         }
 }
+
+
 ?>
