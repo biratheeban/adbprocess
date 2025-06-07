@@ -1,6 +1,15 @@
 
+from bs4 import BeautifulSoup
+
 with open("test.html", "r", encoding="utf-8") as file:
     html = file.read()
-soup = BeautifulSoup(html, "html.parser")
-content = soup.find("div", {"id": "jenkins-build-history"})
-print(content)
+
+
+soup = BeautifulSoup(html, "jenkins-build-history")
+
+content = soup.find("div", {"id": "main-content"})
+if content:
+    print(content.text.strip())
+else:
+    print("Content not found.")
+
