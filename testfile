@@ -1,15 +1,18 @@
-
 from bs4 import BeautifulSoup
 
 with open("test.html", "r", encoding="utf-8") as file:
     html = file.read()
 
-
 soup = BeautifulSoup(html, "html.parser")
 
 content = soup.find("div", {"id": "jenkins-build-history"})
-if content:
-    print(content.text.strip())
-else:
-    print("Content not found.")
 
+if content:
+    containers = content.find_all("div", class_="app-builds-container item")
+    
+    for container in containers:
+        links = container.find_all("a", href=True)
+        for link in links:
+            print(link["href"])
+else:
+    print("Content with id='jenkins-build-history' not found.")
