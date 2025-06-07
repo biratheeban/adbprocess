@@ -5,9 +5,9 @@ with open("test.html", "r", encoding="utf-8") as file:
     html = file.read()
 
 
-soup = BeautifulSoup(html, "jenkins-build-history")
+soup = BeautifulSoup(html, "html.parser")
 
-content = soup.find("div", {"id": "main-content"})
+content = soup.find("div", {"id": "jenkins-build-history"})
 if content:
     print(content.text.strip())
 else:
