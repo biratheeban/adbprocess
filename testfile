@@ -16,3 +16,21 @@ if content:
             print(link["href"])
 else:
     print("Content with id='jenkins-build-history' not found.")
+
+
+
+
+
+from bs4 import BeautifulSoup
+
+with open("test.html", "r", encoding="utf-8") as file:
+    html = file.read()
+
+soup = BeautifulSoup(html, "html.parser")
+
+containers = soup.find_all("div", class_="")
+
+for container in containers:
+    links = container.find_all("a", href=True)
+    for link in links:
+        print(link["href"])
