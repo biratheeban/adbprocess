@@ -1,3 +1,6 @@
 
 with open("test.html", "r", encoding="utf-8") as file:
     html = file.read()
+soup = BeautifulSoup(html, "html.parser")
+content = soup.find("div", {"id": "jenkins-build-history"})
+print(content)
